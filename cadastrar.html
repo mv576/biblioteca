@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadastro de Livros</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .container {
+      margin-top: 50px;
+    }
+    .livro-capa {
+      max-height: 200px;
+      object-fit: contain;
+    }
+
+    body { background-color: #f8f9fa; padding: 20px; }
+    .card-summary { min-width: 200px; }
+    .table-container { max-height: 400px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="text-center mt-3 mb-3">
+      <a href="listar.php" class="btn btn-secondary">🔙 Ver livros cadastrados</a>
+    </div>
+
+    <div class="text-center mt-3">
+      <a href="index.html" class="btn btn-secondary">🔙 Voltar ao Início</a>
+    </div>
+
+    <h2 class="text-center mb-4">
+      📚 Sistema da Biblioteca <br> Cadastro de Livros
+    </h2>
+
+    <!-- Campo para buscar ISBN -->
+    <div class="mb-3">
+      <label for="isbn" class="form-label">Digite ou escaneie o ISBN do livro:</label>
+      <input type="text" class="form-control" id="isbn" placeholder="Ex: 9786598218218" onkeyup="buscarLivro(event)" />
+    </div>
+
+    <div id="mensagem"></div>
+    <div id="infoLivro" class="mt-4"></div>
+  </div>
+
+  <script>
+    // Busca o livro pelo ISBN na API do Google
+    async function buscarLivro(event) {
+      const isbn = event.target.value.replace(/[^0-9Xx]/g, '');
+      if (isbn.length !== 10 && isbn.length !== 13) return;
+
+      document.getElementById('infoLivro').innerHTML = `<p>🔍 Buscando livro...</p>`;
+
+      try {
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+        const data = await res.json();
+        const livro = data.items?.[0]?.volumeInfo;
+
+        if (livro) {
+          document.getElementById('infoLivro').innerHTML = `
+            <div class="card shadow-sm mb-4">
+              <div class="row g-0">
+                <div class="col-md-3 text-center">
+                  <img src="${livro.imageLinks?.thumbnail || ''}" class="img-fluid livro-capa p-2" alt="Capa do livro" />
+                </div>
+                <div class="col-md-9">
+                  <div class="card-body">
+                    <h5 class="card-title">${livro.title}</h5>
+                    <p><strong>Autor(es):</strong> ${livro.authors?.join(', ') || 'N/A'}</p>
+                    <p><strong>Editora:</strong> ${livro.publisher || 'N/A'}</p>
+                    <p><strong>Ano:</strong> ${livro.publishedDate || 'N/A'}</p>
+                    <p><strong>Páginas:</strong> ${livro.pageCount || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Formulário automático -->
+            <form id="formLivro" class="card p-3 shadow-sm">
+              <div class="mb-3">
+                <label class="form-label">ISBN</label>
+                <input type="text" class="form-control" name="isbn" value="${isbn}" readonly />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Título</label>
+                <input type="text" class="form-control" name="titulo" value="${livro.title || ''}" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Autor(es)</label>
+                <input type="text" class="form-control" name="autor" value="${livro.authors?.join(', ') || ''}" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Editora</label>
+                <input type="text" class="form-control" name="editora" value="${livro.publisher || ''}" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Ano de Publicação</label>
+                <input type="text" class="form-control" name="ano" value="${livro.publishedDate || ''}" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Número de Páginas</label>
+                <input type="number" class="form-control" name="paginas" value="${livro.pageCount || ''}" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Número da Prateleira</label>
+                <input type="text" class="form-control" name="plateleira" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Tombamento</label>
+                <input type="text" class="form-control" name="tombamento" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Coleção</label>
+                <input type="text" class="form-control" name="colecao" />
+              </div>
+              <button type="submit" class="btn btn-success">Salvar no Banco de Dados</button>
+            </form>
+          `;
+          ativarEnvioFormulario();
+        } else {
+          exibirFormularioManual(isbn);
+        }
+      } catch (error) {
+        console.error(error);
+        document.getElementById('infoLivro').innerHTML = "<p class='text-danger'>❌ Erro ao buscar o livro. Tente novamente.</p>";
+      }
+    }
+
+    // Formulário manual caso não encontre o ISBN
+    function exibirFormularioManual(isbn) {
+      document.getElementById('infoLivro').innerHTML = `
+        <div class="alert alert-warning" role="alert">
+          Livro com ISBN <strong>${isbn}</strong> não encontrado. Preencha os dados manualmente:
+        </div>
+
+        <form id="formLivro" class="card p-3 shadow-sm">
+          <input type="hidden" name="isbn" value="${isbn}">
+          <div class="mb-3">
+            <label class="form-label">Título</label>
+            <input type="text" class="form-control" name="titulo" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Autor(es)</label>
+            <input type="text" class="form-control" name="autor" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Editora</label>
+            <input type="text" class="form-control" name="editora">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Ano de Publicação</label>
+            <input type="text" class="form-control" name="ano">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Número de Páginas</label>
+            <input type="number" class="form-control" name="paginas">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Número da Prateleira</label>
+            <input type="text" class="form-control" name="plateleira">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tombamento</label>
+            <input type="text" class="form-control" name="tombamento">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Coleção</label>
+            <input type="text" class="form-control" name="colecao">
+          </div>
+          <button type="submit" class="btn btn-primary">Salvar Livro</button>
+        </form>
+      `;
+      ativarEnvioFormulario();
+    }
+
+    // Envia formulário para salvar.php
+    function ativarEnvioFormulario() {
+      $('#formLivro').off('submit').on('submit', function (e) {
+        e.preventDefault();
+
+        $.ajax({
+          url: 'salvar.php',
+          method: 'POST',
+          data: $(this).serialize(),
+          success: function (resposta) {
+            $('#mensagem').html(`<div class="alert alert-success">✅ ${resposta}</div>`);
+            $('#infoLivro').html('');
+            $('#isbn').val('');
+          },
+          error: function (xhr) {
+            $('#mensagem').html(`<div class="alert alert-danger">❌ ${xhr.responseText}</div>`);
+          }
+        });
+      });
+    }
+  </script>
+</body>
+</html>
