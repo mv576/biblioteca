@@ -41,7 +41,7 @@ Como este projeto depende de PHP e um banco de dados, ele **não funciona** apen
 
 1.  Clone este repositório:
     ```bash
-    git clone [https://github.com/seu-usuario/nome-do-repositorio.git](https://github.com/seu-usuario/nome-do-repositorio.git)
+    git clone [https://github.com/mv576/biblioteca.git](https://github.com/mv576/biblioteca.git)
     ```
 2.  Mova a pasta do projeto para dentro da pasta `htdocs` (no XAMPP) ou `www` (no WAMP/MAMP).
 3.  Inicie os serviços do Apache e MySQL no seu servidor local.
